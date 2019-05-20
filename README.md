@@ -1,6 +1,7 @@
 
 
 
+
 # Setup Dynamodb Backend
 
 ## Prerequisites
@@ -389,7 +390,7 @@ Create file `populate-product.json` in `aws-cli` folder
       ]
    }
 ```
-### Step 1.3:  Add Items to the DynamoDB Table
+### Step 1.5:  Add Items to the DynamoDB Table
 Run the following commands in order
 ```bash
 $ aws dynamodb batch-write-item --request-items file://~/enviroment/myproject-product-restapi/aws-cli/populate-product.json --endpoint-url http://localhost:8000
@@ -398,7 +399,7 @@ $ aws dynamodb batch-write-item --request-items file://~/enviroment/myproject-pr
 $ aws dynamodb scan --table-name ProductTable --endpoint-url http://localhost:8000
 ```
 
-### Step 1.5: Setup .env file
+### Step 1.6: Setup .env file
 
 In `api/` folder, create the following file:  `.env`
 ```
@@ -410,7 +411,7 @@ DYNAMODB_ENDPOINT_URL=http://dynamo-db:8000/
 TABLE_NAME=ProductTable
 ```
 
-### Step 1.6:  Create Client to Interact with Dynamodb
+### Step 1.7:  Create Client to Interact with Dynamodb
 
 In `api/products/` folder, create the following file:   `product_table_client.py`
 
@@ -637,239 +638,92 @@ def deleteProduct(product_id):
     return json.dumps(product)
 ```
 
-### Step 1.7: Modify Routes to consume data from our Dynamodb Client
-In `api/products/` folder, modify the following file:   `product_table_client.py`
+### Step 1.8: Modify Routes to consume data from our Dynamodb Client
+In `api/products/` folder, modify the following file:   `product_routes.py`
 
 ```python
-import boto3
-import json
-import logging
-from collections import defaultdict
-import argparse
-from decouple import config
-import uuid
+from flask import Blueprint
+from flask import Flask, json, Response, request
+from products import product_table_client
 from custom_logger import setup_logger
 
-
+# Set up the custom logger and the Blueprint
 logger = setup_logger(__name__)
+product_module = Blueprint('products', __name__)
 
-# For production: 
+# Allow the default route to return a health check
+@product_module.route('/')
+def health_check():
+    return "This a health check. Product Management Service is up and running."
 
-# create a DynamoDB client using boto3. The boto3 library will automatically
-# use the credentials associated with our ECS task role to communicate with
-# DynamoDB, so no credentials need to be stored/managed at all by our code!
-
-# For local development
-# we need to specify the aws access keys to be random string
-
-dynamodb = boto3.client('dynamodb', 
-            endpoint_url=config('DYNAMODB_ENDPOINT_URL', default='http://dynamo-db:8000/'),
-            region_name=config('REGION', default='ap-southeast-1'),
-            aws_access_key_id='x',
-            aws_secret_access_key='x'
-        )
-
-table_name = config('TABLE_NAME', default='SampleTable')
-
-
-# dynamodb = boto3.client('dynamodb')
-# table_name = 'ProductTable'
-
-def getJsonData(items):
-    # create a default dictonary
-    product_list = defaultdict(list)
     
-    # loop through the items given as parameters
-    for item in items:
-    # define product payload object
-        product = {
-            'id': item["id"]["S"],
-            'name': item['name']['S'],
-            'description': item['description']['S'],
-            'image_url': item['image_url']['S'],
-            'price': item['price']['N'],
-        }
-        product_list['products'].append(product)
+@product_module.route('/products')
+def get_all_products():
 
-    return product_list
+    #returns all the products coming from dynamodb
+    serviceResponse = product_table_client.getAllProducts()
     
-def getAllProducts():
-
-    response = dynamodb.scan(
-        TableName=table_name
-    )
-        
-    # loop through the returned dict and convert this into json
-    data_list = getJsonData(response["Items"])
+    resp = Response(serviceResponse)
+    resp.headers["Content-Type"] = "application/json"
     
-    return json.dumps(data_list)
+    return resp
+    
+@product_module.route("/products/<product_id>", methods=['GET'])
+def get_product(product_id):
 
-# Retrive a single mysfit from DynamoDB using their unique mysfitId
-def getProduct(product_id):
+    #returns a product given its id
+    serviceResponse = product_table_client.getProduct(product_id)
 
-    # get a product by its unique key
-    response = dynamodb.get_item(
-        TableName=table_name,
-        Key={
-            'id': {
-                'S': product_id
-            }
-        }
-    )
+    resp = Response(serviceResponse)
+    resp.headers["Content-Type"] = "application/json"
 
+    return resp
 
-    # check if the item exists in dynamodb
-    if 'Item' in response:
-        item = response['Item']
+@product_module.route("/products", methods=['POST'])
+def create_product():
 
-        logger.info("Get Product Response: ")
-        logger.info(response)
-        
-        # define product payload object
-        product = {
-            'id': item["id"]["S"],
-            'name': item['name']['S'],
-            'description': item['description']['S'],
-            'image_url': item['image_url']['S'],
-            'price': item['price']['N'],
-        }
+    #creates a new product. The product id is automatically generated.
+    product_dict = json.loads(request.data)
+    serviceResponse = product_table_client.createProduct(product_dict)
 
-    else:
+    resp = Response(serviceResponse)
+    resp.headers["Content-Type"] = "application/json"
 
-        product = {
-            'status' : "The product with id: {} does not exist.".format(product_id)
-        }
+    return resp
 
 
-    return json.dumps(product)
+@product_module.route("/products/<product_id>", methods=['PUT'])
+def update_product(product_id):
+    
+    #updates a product given its id.
+    product_dict = json.loads(request.data)
+    serviceResponse = product_table_client.updateProduct(product_id, product_dict)
 
-def createProduct(product_dict):
+    resp = Response(serviceResponse)
+    resp.headers["Content-Type"] = "application/json"
 
-    product_id = str(uuid.uuid4())
-    name = str(product_dict['name'])
-    description = str(product_dict['description'])
-    image_url = str(product_dict['image_url'])
-    price = str(product_dict['price'])
+    return resp
 
+@product_module.route("/products/<product_id>", methods=['DELETE'])
+def delete_product(product_id):
+    
+    #deletes a product given its id.
+    serviceResponse = product_table_client.deleteProduct(product_id)
 
-    response = dynamodb.put_item(
-        TableName=table_name,
-        Item={
-                'id': {
-                    'S': product_id
-                },
-                'name': {
-                    'S' : name
-                },
-                'description' : {
-                    'S' : description
-                },
-                'image_url': {
-                    'S' : image_url
-                },
-                'price': {
-                    'N' : price
-                }             
-            }
-        )
+    resp = Response(serviceResponse)
+    resp.headers["Content-Type"] = "application/json"
 
-
-    # define product payload object
-
-    product = {
-        'id': product_id,
-        'name': name,
-        'description': description,
-        'image_url': image_url,
-        'price': price,
-        'status' : 'CREATED OK'
-    }
-
-    return json.dumps(product)
-
-def updateProduct(product_id, product_dict):
-
-    # TODO: Fix validation for record updates
-
-    # example used for updating values
-    # https://stackoverflow.com/questions/37721245/boto3-updating-multiple-values
-    product_name = str(product_dict['name'])
-    description = str(product_dict['description'])
-    image_url = str(product_dict['image_url'])
-    price = str(product_dict['price'])
-
-    response = dynamodb.update_item(
-        TableName=table_name,
-        Key={
-            'id': {
-                'S': product_id
-            }
-        },
-        UpdateExpression="""SET product_name = :p_name, 
-                                description = :p_description,
-                                image_url = :p_image_url,
-                                price = :p_price
-                                """,
-        ExpressionAttributeValues={
-            ':p_name': {
-                'S' : product_name
-            },
-            ':p_description' : {
-                'S' : description
-            },
-            ':p_image_url': {
-                'S' : image_url
-            },
-            ':p_price': {
-                'N' : price
-            }              
-        }
-    )
-
-
-    logger.info("Update Product Response: ")
-    logger.info(response)
-
-    # define product payload object
-    product = {
-        'name': product_name,
-        'description': description,
-        'image_url': image_url,
-        'price': price,
-        'status' : 'UPDATED OK'
-    }
-
-
-    return json.dumps(product)
-
-def deleteProduct(product_id):
-
-    response = dynamodb.delete_item(
-        TableName=table_name,
-        Key={
-            'id': {
-                'S': product_id
-            }
-        }
-    )
-
-    product = {
-        'id' : product_id,
-        'status' : 'DELETED OK'
-    }
-
-    return json.dumps(product)
-
+    return resp
 ```
 
-### Step 1.8: Restart Application and Dynamodb Local
+### Step 1.9: Restart Application and Dynamodb Local
 
 ```
 $ docker-compose down
 $ docker-compose up
 ```
 
-### Step 1.14: Test CRUD Operations
+### Step 1.10: Test CRUD Operations
 - Test Get all Products
 ```
 curl -X GET \
