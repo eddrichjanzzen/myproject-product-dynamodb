@@ -126,7 +126,7 @@ volumes:
 In a new terminal: run the following command:
 ```
  aws dynamodb create-table \
---cli-input-json file://~/environment/myproject-product-restapi/product-schema.json \
+--cli-input-json file://~/environment/myproject-product-restapi/aws-cli/product-schema.json \
 --endpoint-url http://localhost:8000
 ```
 
@@ -862,7 +862,24 @@ curl -X DELETE \
 
 ## Step 2: Setup Dynamodb for Production
 
-### TODO
+Run the following commands:
+
+Create Dynamodb Production Schema:
+```
+$ aws dynamodb create-table \
+--cli-input-json file://~/environment/myproject-product-restapi/aws-cli/product-schema.json 
+```
+
+Populate the Dynamodb Table
+```
+$ aws dynamodb batch-write-item --request-items file://~/enviroment/myproject-product-restapi/aws-cli/populate-product.json 
+```
+
+Check if the Created Table exists
+```
+# Use to scan existing tables
+$ aws dynamodb scan --table-name ProductTable 
+```
 
 ### (Optional) Clean up
 ```
