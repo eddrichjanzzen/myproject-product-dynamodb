@@ -1,0 +1,23 @@
+version: '3'
+services:
+  # https://github.com/aws-samples/aws-sam-java-rest/issues/1
+  dynamo-db:
+    image: amazon/dynamodb-local
+    ports:
+      - "8000:8000"
+    volumes:
+      - dynamodb_data:/home/dynamodblocal
+    working_dir: /home/dynamodblocal
+    command: "-jar DynamoDBLocal.jar -sharedDb -dbPath ."
+
+  api:
+    build: .
+    volumes:
+      - .:/code
+    ports:
+      - '8080:8080'
+    links: 
+      - dynamo-db
+    working_dir: /code/api
+volumes:
+  dynamodb_data:

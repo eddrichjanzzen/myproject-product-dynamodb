@@ -1,0 +1,256 @@
+{
+      "ProductTable" : [
+         {
+            "PutRequest":{
+               "Item":{
+                  "id":{
+                     "S":"4d196c50-aabf-4df2-afb3-fd21481259d6"
+                  },
+                  "name":{
+                     "S":"Boracay Sunset Cruise"
+                  },
+                  "description":{
+                     "S":"The Boracay sunset is a spectacular site to see and what better way than cruising on the ocean with an icy cold beverage!  Tour along White Beach and take in all the tropical sights and sounds while you enjoy the spectacular arrays of color of the Boracay sunset.  Stop off for a quick swim, stand up paddle and snorkel or chill out in tube before heading back to enjoy your dinner in paradise."
+                  },
+                  "image_url":{
+                     "S":"https://cdn5.myboracayguide.com/2019/02/Boracay-Sunset-Cruise-00-400x267.jpg"
+                  },
+                  "price":{
+                     "N":"800"
+                  }
+               }
+            }
+         },
+         {
+            "PutRequest":{
+               "Item":{
+                  "id":{
+                     "S":"6b3c211a-53f3-4c2a-a4f3-dc1fd5d42bfc"
+                  },
+                  "name":{
+                     "S":"Group Island Hopping"
+                  },
+                  "description":{
+                     "S":"Make new friends by joining a shared boat cruise where you will cruise the shores of Boracay in a traditional Banka boat. Visit the famous Puka shell beach and take a stroll on the beach, swim in the azure waters or just relax with a fresh coconut enjoying the sun. Stop off for a snorkel and see Boracay\u2019s beautiful tropical fish and corals.  Finish the trip with a delicious buffet lunch."
+                  },
+                  "image_url":{
+                     "S":"https://cdn5.myboracayguide.com/2019/03/Boracay-Group-Island-Hopping-Boracay-Activities-01-400x267.jpg"
+                  },
+                  "price":{
+                     "N":"1500"
+                  }
+               }
+            }
+         },
+         {
+            "PutRequest":{
+               "Item":{
+                  "id":{
+                     "S":"91e759dc-f385-42e1-8098-a44399bebce8"
+                  },
+                  "name":{
+                     "S":"Ultimate Cliff Jumping Island Hopping Adventure"
+                  },
+                  "description":{
+                     "S":"Experience a day of fun on Magic Island and have the thrill of a lifetime with 5 different levels of cliff jumping. Relax and swim or go snorkeling around the Island."
+                  },
+                  "image_url":{
+                     "S":"https://cdn5.myboracayguide.com/2016/06/Island-Hopping-Boracay-Activities-400x267-400x267.jpg"
+                  },
+                  "price":{
+                     "N":"2200"
+                  }
+               }
+            }
+         },
+         {
+            "PutRequest":{
+               "Item":{
+                  "id":{
+                     "S":"2178bb44-32f1-4d22-bc95-05cd039a3067"
+                  },
+                  "name":{
+                     "S":"4 Hour Private Boracay Island Hopping Package"
+                  },
+                  "description":{
+                     "S":"Your Boracay adventure experience will not be complete without this trip! The island is home to more than a dozen undeveloped beaches, turquoise waters and colorful coral reefs! Feast your eyes on the amazing scenery, snorkel and get a glimpse of the thriving sea life!The boat trip includes stopover at some amazing places in Boracay where you can go snorkeling and swimming. Snorkeling gears will be provided for you."
+                  },
+                  "image_url":{
+                     "S":"https://cdn5.myboracayguide.com/2016/09/Private-Island-Hopping-Boracay-Activity-8-400x267.jpg"
+                  },
+                  "price":{
+                     "N":"2900"
+                  }
+               }
+            }
+         },
+         {
+            "PutRequest":{
+               "Item":{
+                  "id":{
+                     "S":"8f086c95-df7d-4914-98b5-e3378663e967"
+                  },
+                  "name":{
+                     "S":"Paraw Sailing"
+                  },
+                  "description":{
+                     "S":"Paraw Sailing is a local sail boat\u00a0activity. The boats use two outriggers and two sails. Experience the traditional way of sailing and discover the best sites around the island, perfect for photography \u2013 though do note on days with heavier waves the water can kick up a bit (exciting!). If you schedule your activity for later in the afternoon you can take advantage of the incredible sunset while relaxing on the boat for half an hour. Sea sickness? usually not a problem as the boats tend to stay closer into the shore and cut through the waves very well. \u00a0Paraw sailing around Boracay is probably a really good way to ease yourself into the sea and find out how much you like it."
+                  },
+                  "image_url":{
+                     "S":"https://cdn5.myboracayguide.com/2016/03/Paraw-Sailing-Boracay-Activities-400x267.jpg"
+                  },
+                  "price":{
+                     "N":"3000"
+                  }
+               }
+            }
+         },
+         {
+            "PutRequest":{
+               "Item":{
+                  "id":{
+                     "S":"6aa0ed0f-ddcc-42ff-8059-eea5ee40496d"
+                  },
+                  "name":{
+                     "S":"Parasailing"
+                  },
+                  "description":{
+                     "S":"Parasailing on Boracay is a great experience for a few adventure-minded individuals. Imagine being whisked into the sky while strapped in a seat covered by a colorful parachute! This is a popular activity where riders can view the beautiful shoreline of white beach from above while being pulled by a boat. This is a fun and exciting experience for those who love heights and want a birds-eye-view of the whole island. Up to two guests can occupy the same canopy."
+                  },
+                  "image_url":{
+                     "S":"https://cdn5.myboracayguide.com/2016/04/Parasailing-Boracay-Activities-400x267.jpg"
+                  },
+                  "price":{
+                     "N":"2500"
+                  }
+               }
+            }
+         },
+         {
+            "PutRequest":{
+               "Item":{
+                  "id":{
+                     "S":"c5f7878a-70cd-49da-9a24-ca0b86beb71c"
+                  },
+                  "name":{
+                     "S":"Boracay Pub Crawl"
+                  },
+                  "description":{
+                     "S":"Boracay Pub Crawl is the biggest, hippest and most happening bar-hopping event on Boracay! Meet amazing people from around the world, play get to know you games to break the ice, drink welcome shooters with your free shooter glass, get discounts on drinks, free entrance in bars, and wear your iconic pub crawl shirt! This is definitely one of the most awesome ways to experience the island\u2019s famous nightlife and also a great chance to take pictures. Boracay PubCrawl is the first of its kind to offer both travelers and locals the chance to party as one big, wild group. Discover the best night spots and make new friends over the course of a great evening out."
+                  },
+                  "image_url":{
+                     "S":"https://cdn5.myboracayguide.com/2016/04/Boracay-Pub-Crawl-Activities-400x267.jpeg"
+                  },
+                  "price":{
+                     "N":"990"
+                  }
+               }
+            }
+         },
+         {
+            "PutRequest":{
+               "Item":{
+                  "id":{
+                     "S":"0c3b6e63-9a92-4662-8a44-d3d9adc334c2"
+                  },
+                  "name":{
+                     "S":"Sunset Party Cruise Booty"
+                  },
+                  "description":{
+                     "S":"Aside from its amazing parties, Boracay is world famous for its breath-taking sunset. Hop on the island\u2019s 40 passenger party vessel, Booty, and jam with other travelers as you listen to great music! Definitely a memorable party at sundown!"
+                  },
+                  "image_url":{
+                     "S":"https://cdn5.myboracayguide.com/2016/04/Sunset-Party-Cruise-Booty-400x267.jpg"
+                  },
+                  "price":{
+                     "N":"2500"
+                  }
+               }
+            }
+         },
+         {
+            "PutRequest":{
+               "Item":{
+                  "id":{
+                     "S":"36b74f58-084d-4b67-9daa-a046296604e6"
+                  },
+                  "name":{
+                     "S":"Ariels Point"
+                  },
+                  "description":{
+                     "S":"Let us help you experience everything good about Ariel\u2019s Point. Many guests come for the 5 different levels of cliff diving; the cliff diving levels are generally suitable for all types of adventurers. Those that want a great photo in a naturally beautiful place\u00a0while having a bit of a jump, won\u2019t be disappointed or terrified. Similarly, hardcore guests that want to jump from the top of a volcanically hewn outcrop into the deep blue arms of the sea won\u2019t be let down either. \u00a0Ariel\u2019s Point is located near the rustic fishing town of Buruanga, a half hour boat ride from Boracay\u2019s white beach. Gather with other travelers as you snorkel, paddle in a native canoe, or just laze under the sun while enjoying the uniquely rough, &\u00a0comfortable environment."
+                  },
+                  "image_url":{
+                     "S":"https://cdn5.myboracayguide.com/2016/04/Ariels-Point-Boracay-Activities-1-400x267.jpg"
+                  },
+                  "price":{
+                     "N":"2800"
+                  }
+               }
+            }
+         },
+         {
+            "PutRequest":{
+               "Item":{
+                  "id":{
+                     "S":"420cb55b-99cb-45b1-a860-d079cc1d2cea"
+                  },
+                  "name":{
+                     "S":"Stand Up Paddle on the Beach"
+                  },
+                  "description":{
+                     "S":"Experience how it\u2019s like to glide on the water surface from a Stand-Up Paddle Board. Paddling on a Stand-Up Paddle board for lets you commune with the current of the sea, either by standing up, kneeling or sitting down. It also provides a good exercise to maintain your balance and to strengthen your core, while you paddle into the water to workout your arms and upper body."
+                  },
+                  "image_url":{
+                     "S":"https://cdn5.myboracayguide.com/2016/10/Stand-Up-Paddle-Boracay-Activity-01-400x267.jpg"
+                  },
+                  "price":{
+                     "N":"1000"
+                  }
+               }
+            }
+         },
+         {
+            "PutRequest":{
+               "Item":{
+                  "id":{
+                     "S":"778bad3e-6fb4-4deb-8ff2-120bcbc5f27e"
+                  },
+                  "name":{
+                     "S":"Segway Tours"
+                  },
+                  "description":{
+                     "S":"Surrender to the freedom of gliding along Boracay\u2019s scenic spots on a Segway. For an exhilarating hour, you will be able to feel a gratifying oneness with the Segway and surrender to its awesome mechanism, giving you a relaxed and confident exploration into the island\u2019s diverse sceneries. This eco-freindly joyride kicks off with a short video presentation at its booth inside the panoramic grounds of Fairways and Blue Water. A routine trial thence follows, and after, the actual Segway ride takes place. The first leg encompasses a comfortable descent on the pavement, where beginners"
+                  },
+                  "image_url":{
+                     "S":"https://cdn5.myboracayguide.com/2016/08/Segway-Tours-Boracay-Activities-01-400x267.jpg"
+                  },
+                  "price":{
+                     "N":"2300"
+                  }
+               }
+            }
+         },
+         {
+            "PutRequest":{
+               "Item":{
+                  "id":{
+                     "S":"7c72e357-7228-4b6c-bdd0-d9aab71512ac"
+                  },
+                  "name":{
+                     "S":"Helicopter Beach Tour"
+                  },
+                  "description":{
+                     "S":"Boracay Helicopter Beach Tour \u2013 It\u2019s never been better. Have a 10-minute adrenaline-filled experience of touring the island by helicopter! See Boracay\u2019s white sands, blue green waters, and reefs from above! This is the ultimate chance to snap birds-eye-view photographs!"
+                  },
+                  "image_url":{
+                     "S":"https://cdn5.myboracayguide.com/2010/01/Boracay-Helicopter-Tours-Boracay-Activity-07-400x267.jpg"
+                  },
+                  "price":{
+                     "N":"5200"
+                  }
+               }
+            }
+         }
+      ]
+   }
