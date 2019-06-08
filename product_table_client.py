@@ -26,7 +26,7 @@ dynamodb = boto3.client('dynamodb',
             aws_secret_access_key='x'
         )
 
-table_name = config('TABLE_NAME', default='SampleTable')
+table_name = config('TABLE_NAME', default='ProductTable')
 
 
 # dynamodb = boto3.client('dynamodb')
@@ -98,7 +98,7 @@ def getProduct(product_id):
         }
 
 
-    return json.dumps(product)
+    return json.dumps({'products' : product})
 
 def createProduct(product_dict):
 
@@ -142,7 +142,7 @@ def createProduct(product_dict):
         'status' : 'CREATED OK'
     }
 
-    return json.dumps(product)
+    return json.dumps({'products': product})
 
 def updateProduct(product_id, product_dict):
 
@@ -197,7 +197,7 @@ def updateProduct(product_id, product_dict):
     }
 
 
-    return json.dumps(product)
+    return json.dumps({'products':product})
 
 def deleteProduct(product_id):
 
@@ -215,4 +215,4 @@ def deleteProduct(product_id):
         'status' : 'DELETED OK'
     }
 
-    return json.dumps(product)
+    return json.dumps({'products':product})

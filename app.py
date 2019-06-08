@@ -2,7 +2,7 @@ from flask import Flask
 from flask_cors import CORS
 
 # Add new blueprints here
-from products.product_routes import product_module
+from product_routes import product_module
 
 # Initialize the flask application
 app = Flask(__name__)
@@ -12,4 +12,4 @@ CORS(app)
 app.register_blueprint(product_module)
 
 # Run the application
-app.run(host="0.0.0.0", port=8080, debug=True)
+app.run(host="0.0.0.0", port=5000, debug=True)

@@ -14,7 +14,7 @@ RUN pip install -r requirements.txt
 
 ADD . /code/
 
-WORKDIR /code/api
+WORKDIR /code/
 
 ENTRYPOINT ["python"]
 
