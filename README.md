@@ -1,6 +1,7 @@
 
 
 
+
 # Setup Dynamodb Backend
 
 ## Prerequisites
@@ -17,15 +18,19 @@ docker-compose version 1.23.2, build 1110ad01
 Your current directory structure from the previous module must look like this:
 ```
 ~/environment/myproject-product-restapi
+.
+├── Dockerfile
 ├── README.md
-└── product-management
-    ├── Dockerfile
-    ├── api
-    │   ├── app.py
-    │   ├── custom_logger.py
-    │   └── products
-    │       └── product_routes.py
-    └── requirements.txt
+├── app.py
+├── aws-cli
+│   ├── populate-products.json
+│   └── product-schema.json
+├── buildspec.yml
+├── custom_logger.py
+├── docker-compose.yaml
+├── product_routes.py
+├── product_table_client.py
+└── requirements.txt
 ```
 *Note that we will be building on top of `myproject-product-restapi`
 ## Step 1: Add Data tier with DynamoDB
@@ -87,38 +92,44 @@ $ touch product-schema.json
 ```
 
 ### Step 1.2: Run Dynamodb Local Instance
- In `product-management` folder, create the following file `docker-compose.yaml`
+ In `myproject-product-restapi` folder, create the following file `docker-compose.yaml`
 
 ```
-$ cd product-management
 $ touch docker-compose.yaml
 ```
 ```docker
 version: '3'
 services:
-  # This creates a local version of dynamodb
   # https://github.com/aws-samples/aws-sam-java-rest/issues/1
   dynamo-db:
     image: amazon/dynamodb-local
     ports:
-      - "8000:8000"
+      - '8000:8000'
     volumes:
       - dynamodb_data:/home/dynamodblocal
     working_dir: /home/dynamodblocal
     command: "-jar DynamoDBLocal.jar -sharedDb -dbPath ."
-  
-  # backend api service
+
   api:
     build: .
     volumes:
       - .:/code
     ports:
-      - '8080:8080'
+      - '5000:5000'
     links: 
       - dynamo-db
-    working_dir: /code/api
 volumes:
   dynamodb_data:
+```
+
+build docker images
+```
+$ docker-compose build
+```
+
+run docker images
+```
+docker-compose up
 ```
 
 ### Step 1.3:  Create a DynamoDB Table
@@ -130,7 +141,7 @@ In a new terminal: run the following command:
 ```
 
 ### Step 1.4:  Prepare Items to upload
-Create file `populate-product.json` in `aws-cli` folder
+Create file `populate-products.json` in `aws-cli` folder
 ```json
 {
       "ProductTable" : [
@@ -392,7 +403,7 @@ Create file `populate-product.json` in `aws-cli` folder
 ### Step 1.3:  Add Items to the DynamoDB Table
 Run the following commands in order
 ```bash
-$ aws dynamodb batch-write-item --request-items file://~/enviroment/myproject-product-restapi/aws-cli/populate-product.json --endpoint-url http://localhost:8000
+$ aws dynamodb batch-write-item --request-items file://~/enviroment/myproject-product-restapi/aws-cli/populate-products.json --endpoint-url http://localhost:8000
 
 # Use to scan existing tables
 $ aws dynamodb scan --table-name ProductTable --endpoint-url http://localhost:8000
@@ -400,9 +411,8 @@ $ aws dynamodb scan --table-name ProductTable --endpoint-url http://localhost:80
 
 ### Step 1.5: Setup .env file
 
-In `api/` folder, create the following file:  `.env`
+In `myproject-product-restapi` folder, create the following file:  `.env`
 ```
-$ cd api
 $ touch .env
 ```
 ```
@@ -412,10 +422,9 @@ TABLE_NAME=ProductTable
 
 ### Step 1.6:  Create Client to Interact with Dynamodb
 
-In `api/products/` folder, create the following file:   `product_table_client.py`
+In `myproject-product-restapi` folder, create the following file:   `product_table_client.py`
 
 ```
-$ cd api/products
 $ touch product_table_client.py
 ```
  
@@ -429,6 +438,7 @@ from decouple import config
 import uuid
 from custom_logger import setup_logger
 
+
 logger = setup_logger(__name__)
 
 # For production: 
@@ -445,9 +455,9 @@ dynamodb = boto3.client('dynamodb',
             region_name=config('REGION', default='ap-southeast-1'),
             aws_access_key_id='x',
             aws_secret_access_key='x'
-             )
+        )
 
-table_name = config('TABLE_NAME', default='SampleTable')
+table_name = config('TABLE_NAME', default='ProductTable')
 
 
 # dynamodb = boto3.client('dynamodb')
@@ -519,229 +529,7 @@ def getProduct(product_id):
         }
 
 
-    return json.dumps(product)
-
-def createProduct(product_dict):
-
-    product_id = str(uuid.uuid4())
-    product_name = str(product_dict['name'])
-    product_description = str(product_dict['description'])
-    product_image_url = str(product_dict['image_url'])
-    price = str(product_dict['price'])
-
-
-    response = dynamodb.put_item(
-        TableName=table_name,
-        Item={
-                'id': {
-                    'S': product_id
-                },
-                'name': {
-                    'S' : product_name
-                },
-                'description' : {
-                    'S' : product_description
-                },
-                'image_url': {
-                    'S' : product_image_url
-                },
-                'price': {
-                    'N' : price
-                }             
-            }
-        )
-
-    # define product payload object
-
-    product = {
-        'id': item["id"]["S"],
-        'name': item['name']['S'],
-        'description': item['description']['S'],
-        'image_url': item['image_url']['S'],
-        'price': item['price']['N'],
-        'status' : 'CREATED OK'
-    }
-
-    return json.dumps(product)
-
-def updateProduct(product_id, product_dict):
-
-    # example used for updating values
-    # https://stackoverflow.com/questions/37721245/boto3-updating-multiple-values
-    name = str(product_dict['name'])
-    description = str(product_dict['description'])
-    image_url = str(product_dict['image_url'])
-    price = str(product_dict['price'])
-
-    response = dynamodb.update_item(
-        TableName=table_name,
-        Key={
-            'id': {
-                'S': product_id
-            }
-        },
-        UpdateExpression="""SET name = :p_name, 
-                                description = :p_description,
-                                image_url = :p_image_url,
-                                price = :p_price
-                                """,
-        ExpressionAttributeValues={
-            ':p_name': {
-                'S' : product_name
-            },
-            ':p_description' : {
-                'S' : product_description
-            },
-            ':p_image_url': {
-                'S' : image_url
-            },
-            ':p_image_url': {
-                'N' : price
-            }              
-        }
-    )
-
-
-    logger.info("Update Product Response: ")
-    logger.info(response)
-
-    # define product payload object
-    product = {
-        'id': item["id"]["S"],
-        'name': item['name']['S'],
-        'description': item['description']['S'],
-        'image_url': item['image_url']['S'],
-        'price': item['price']['N'],
-        'status' : 'UPDATED OK'
-    }
-
-
-    return json.dumps(product)
-
-def deleteProduct(product_id):
-
-    response = dynamodb.delete_item(
-        TableName=table_name,
-        Key={
-            'id': {
-                'S': product_id
-            }
-        }
-    )
-
-    product = {
-        'id' : product_id,
-        'status' : 'DELETED OK'
-    }
-
-    return json.dumps(product)
-```
-
-### Step 1.7: Modify Routes to consume data from our Dynamodb Client
-In `api/products/` folder, modify the following file:   `product_table_client.py`
-
-```python
-import boto3
-import json
-import logging
-from collections import defaultdict
-import argparse
-from decouple import config
-import uuid
-from custom_logger import setup_logger
-
-
-logger = setup_logger(__name__)
-
-# For production: 
-
-# create a DynamoDB client using boto3. The boto3 library will automatically
-# use the credentials associated with our ECS task role to communicate with
-# DynamoDB, so no credentials need to be stored/managed at all by our code!
-
-# For local development
-# we need to specify the aws access keys to be random string
-
-dynamodb = boto3.client('dynamodb', 
-            endpoint_url=config('DYNAMODB_ENDPOINT_URL', default='http://dynamo-db:8000/'),
-            region_name=config('REGION', default='ap-southeast-1'),
-            aws_access_key_id='x',
-            aws_secret_access_key='x'
-        )
-
-table_name = config('TABLE_NAME', default='SampleTable')
-
-
-# dynamodb = boto3.client('dynamodb')
-# table_name = 'ProductTable'
-
-def getJsonData(items):
-    # create a default dictonary
-    product_list = defaultdict(list)
-    
-    # loop through the items given as parameters
-    for item in items:
-    # define product payload object
-        product = {
-            'id': item["id"]["S"],
-            'name': item['name']['S'],
-            'description': item['description']['S'],
-            'image_url': item['image_url']['S'],
-            'price': item['price']['N'],
-        }
-        product_list['products'].append(product)
-
-    return product_list
-    
-def getAllProducts():
-
-    response = dynamodb.scan(
-        TableName=table_name
-    )
-        
-    # loop through the returned dict and convert this into json
-    data_list = getJsonData(response["Items"])
-    
-    return json.dumps(data_list)
-
-# Retrive a single mysfit from DynamoDB using their unique mysfitId
-def getProduct(product_id):
-
-    # get a product by its unique key
-    response = dynamodb.get_item(
-        TableName=table_name,
-        Key={
-            'id': {
-                'S': product_id
-            }
-        }
-    )
-
-
-    # check if the item exists in dynamodb
-    if 'Item' in response:
-        item = response['Item']
-
-        logger.info("Get Product Response: ")
-        logger.info(response)
-        
-        # define product payload object
-        product = {
-            'id': item["id"]["S"],
-            'name': item['name']['S'],
-            'description': item['description']['S'],
-            'image_url': item['image_url']['S'],
-            'price': item['price']['N'],
-        }
-
-    else:
-
-        product = {
-            'status' : "The product with id: {} does not exist.".format(product_id)
-        }
-
-
-    return json.dumps(product)
+    return json.dumps({'products' : product})
 
 def createProduct(product_dict):
 
@@ -785,7 +573,7 @@ def createProduct(product_dict):
         'status' : 'CREATED OK'
     }
 
-    return json.dumps(product)
+    return json.dumps({'product': product})
 
 def updateProduct(product_id, product_dict):
 
@@ -840,7 +628,7 @@ def updateProduct(product_id, product_dict):
     }
 
 
-    return json.dumps(product)
+    return json.dumps({'products':product})
 
 def deleteProduct(product_id):
 
@@ -858,9 +646,119 @@ def deleteProduct(product_id):
         'status' : 'DELETED OK'
     }
 
-    return json.dumps(product)
+    return json.dumps({'products':product})
+```
+
+### Step 1.7: Modify `product_routes.py`
+
+in `product_routes.py` add the following code:
+```python
+from flask import Blueprint
+from flask import Flask, json, Response, request, abort
+import product_table_client
+from custom_logger import setup_logger
+
+# Set up the custom logger and the Blueprint
+logger = setup_logger(__name__)
+product_module = Blueprint('products', __name__)
+
+logger.info("Intialized product routes")
+
+# Allow the default route to return a health check
+@product_module.route('/')
+def health_check():
+    return "This a health check. Product Management Service is up and running."
+
+    
+@product_module.route('/products')
+def get_all_products():
+
+    try:
+        #returns all the products coming from dynamodb
+        serviceResponse = product_table_client.getAllProducts()
+    
+    except Exception as e:
+        logger.error(e)
+        abort(404)
+
+    resp = Response(serviceResponse)
+    resp.headers["Content-Type"] = "application/json"
+    
+    return resp
+    
+@product_module.route("/products/<product_id>", methods=['GET'])
+def get_product(product_id):
+    try:
+        #returns a product given its id
+        serviceResponse = product_table_client.getProduct(product_id)
+    
+    except Exception as e:
+        logger.error(e)
+        abort(400)
+
+    resp = Response(serviceResponse)
+    resp.headers["Content-Type"] = "application/json"
+
+    return resp
+
+@product_module.route("/products", methods=['POST'])
+def create_product():
+    try:
+        #creates a new product. The product id is automatically generated.
+        product_dict = json.loads(request.data)
+        serviceResponse = product_table_client.createProduct(product_dict)
+
+    except Exception as e:
+        logger.error(e)
+        abort(400)
+   
+
+    resp = Response(serviceResponse)
+    resp.headers["Content-Type"] = "application/json"
+
+    return resp
+
+
+@product_module.route("/products/<product_id>", methods=['PUT'])
+def update_product(product_id):
+    try:
+        #updates a product given its id.
+        product_dict = json.loads(request.data)
+        serviceResponse = product_table_client.updateProduct(product_id, product_dict)
+
+    except Exception as e:
+        logger.error(e)
+        abort(400)
+
+    resp = Response(serviceResponse)
+    resp.headers["Content-Type"] = "application/json"
+
+    return resp
+
+@product_module.route("/products/<product_id>", methods=['DELETE'])
+def delete_product(product_id):
+    
+    #deletes a product given its id.
+    serviceResponse = product_table_client.deleteProduct(product_id)
+
+    resp = Response(serviceResponse)
+    resp.headers["Content-Type"] = "application/json"
+
+    return resp
+
+@product_module.errorhandler(400)
+def item_not_found(e):
+    # note that we set the 404 status explicitly
+    return json.dumps({'error': 'Product not found'}), 404
+    
+@product_module.errorhandler(400)
+def bad_request(e):
+    # note that we set the 400 status explicitly
+    return json.dumps({'error': 'Bad request'}), 400
+
 
 ```
+
 
 ### Step 1.8: Restart Application and Dynamodb Local
 
@@ -869,14 +767,14 @@ $ docker-compose down
 $ docker-compose up
 ```
 
-### Step 1.14: Test CRUD Operations
+### Step 1.9: Test CRUD Operations
 - Test Get all Products
-```
+```bash
 curl -X GET \
-  http://localhost:8080/products \
-  -H 'Host: localhost:8080'
+  http://localhost:5000/products \
+  -H 'Host: localhost:5000'
 ```
-```
+```bash
 {
     "products": [
         {
@@ -931,28 +829,30 @@ curl -X GET \
 ..............................
 more data
 ..............................
-	]
+  ]
 }
 ```
 - Test Get Product
-```
+```bash
 curl -X GET \
-  http://localhost:8080/products/8f086c95-df7d-4914-98b5-e3378663e967 \
-  -H 'Host: localhost:8080' 
+  http://localhost:5000/products/8f086c95-df7d-4914-98b5-e3378663e967 \
+ -H 'Content-Type: application/json' \
 ```
-```
+```bash
  {
-     "id": "8f086c95-df7d-4914-98b5-e3378663e967",
-     "name": "Paraw Sailing",
-     "description": "Paraw Sailing is a local sail boat activity. The boats use two outriggers and two sails. Experience the traditional way of sailing and discover the best sites around the island, perfect for photography – though do note on days with heavier waves the water can kick up a bit (exciting!). If you schedule your activity for later in the afternoon you can take advantage of the incredible sunset while relaxing on the boat for half an hour. Sea sickness? usually not a problem as the boats tend to stay closer into the shore and cut through the waves very well.  Paraw sailing around Boracay is probably a really good way to ease yourself into the sea and find out how much you like it.",
-     "image_url": "https://cdn5.myboracayguide.com/2016/03/Paraw-Sailing-Boracay-Activities-400x267.jpg",
-     "price": "3000"
- }
+    "products": {
+        "id": "91e759dc-f385-42e1-8098-a44399bebce8",
+        "name": "Ultimate Cliff Jumping Island Hopping Adventure",
+        "description": "Experience a day of fun on Magic Island and have the thrill of a lifetime with 5 different levels of cliff jumping. Relax and swim or go snorkeling around the Island.",
+        "image_url": "https://cdn5.myboracayguide.com/2016/06/Island-Hopping-Boracay-Activities-400x267-400x267.jpg",
+        "price": "2200"
+    }
+}
 ```
 - Test Create Product
-```
+```bash
 curl -X POST \
-  http://localhost:8080/products \
+  http://localhost:5000/products \
   -H 'Content-Type: application/json' \
   -d ' {
           "name": "4 Hour Private Boracay Island Hopping Package",
@@ -961,20 +861,22 @@ curl -X POST \
           "price": 2900
         }'
 ```
-```
+```bash
 {
-    "id": "42cca4c2-b7e1-4daa-aa48-fdf74e32ba97",
-    "name": "4 Hour Private Boracay Island Hopping Package",
-    "description": "Your Boracay adventure experience will not be complete without this trip! The island is home to more than a dozen undeveloped beaches, turquoise waters and colorful coral reefs! Feast your eyes on the amazing scenery, snorkel and get a glimpse of the thriving sea life!The boat trip includes stopover at some amazing places in Boracay where you can go snorkeling and swimming. Snorkeling gears will be provided for you.",
-    "image_url": "https://cdn5.myboracayguide.com/2016/09/Private-Island-Hopping-Boracay-Activity-8-400x267.jpg",
-    "price": "2900",
-    "status": "CREATED OK"
+    "products": {
+        "id": "75ffb0fa-e978-4acb-9176-903fdd605edc",
+        "name": "4 Hour Private Boracay Island Hopping Package",
+        "description": "Your Boracay adventure experience will not be complete without this trip! The island is home to more than a dozen undeveloped beaches, turquoise waters and colorful coral reefs! Feast your eyes on the amazing scenery, snorkel and get a glimpse of the thriving sea life!The boat trip includes stopover at some amazing places in Boracay where you can go snorkeling and swimming. Snorkeling gears will be provided for you.",
+        "image_url": "https://cdn5.myboracayguide.com/2016/09/Private-Island-Hopping-Boracay-Activity-8-400x267.jpg",
+        "price": "2900",
+        "status": "CREATED OK"
+    }
 }
 ```
 - Test Update Product
-```
+```bash
 curl -X PUT \
-  http://localhost:8080/products/2178bb44-32f1-4d22-bc95-05cd039a3067 \
+  http://localhost:5000/products/2178bb44-32f1-4d22-bc95-05cd039a3067 \
   -H 'Content-Type: application/json' \
   -d ' {
          "name": "4 Hour Private Boracay Island Hopping Package",
@@ -983,35 +885,266 @@ curl -X PUT \
          "price": 2900
         }'
 ```
-```
+```bash
 {
-    "name": "4 Hour Private Boracay Island Hopping Package",
-    "description": "Your Boracay adventure experience will not be complete without this trip! The island is home to more than a dozen undeveloped beaches, turquoise waters and colorful coral reefs! Feast your eyes on the amazing scenery, snorkel and get a glimpse of the thriving sea life!The boat trip includes stopover at some amazing places in Boracay where you can go snorkeling and swimming. Snorkeling gears will be provided for you.",
-    "image_url": "https://cdn5.myboracayguide.com/2016/09/Private-Island-Hopping-Boracay-Activity-8-400x267.jpg",
-    "price": "2900",
-    "status": "UPDATED OK"
+    "products": {
+      "name": "4 Hour Private Boracay Island Hopping Package",
+      "description": "Your Boracay adventure experience will not be complete without this trip! The island is home to more than a dozen undeveloped beaches, turquoise waters and colorful coral reefs! Feast your eyes on the amazing scenery, snorkel and get a glimpse of the thriving sea life!The boat trip includes stopover at some amazing places in Boracay where you can go snorkeling and swimming. Snorkeling gears will be provided for you.",
+      "image_url": "https://cdn5.myboracayguide.com/2016/09/Private-Island-Hopping-Boracay-Activity-8-400x267.jpg",
+      "price": 2900,
+      "status": "UPDATED OK"
+    } 
 }
 ```
 
 - Test Delete Product
-```
+```bash
 curl -X DELETE \
-  http://localhost:8080/products/2178bb44-32f1-4d22-bc95-05cd039a3067 \
+  http://localhost:5000/products/2178bb44-32f1-4d22-bc95-05cd039a3067 \
   -H 'Content-Type: application/json' 
 ```
-```
+```bash
 {
-    "id": "2178bb44-32f1-4d22-bc95-05cd039a3067",
-    "status": "DELETED OK"
+    "products": {
+        "id": "2178bb44-32f1-4d22-bc95-05cd039a3067",
+        "status": "DELETED OK"
+    }
 }
 ```
 
-## Step 2: Setup Dynamodb for Production
+## Step 2: Prepare Application for Production
 
-### TODO
+in `product_table_client.py` add delete the following code:
+```python
+dynamodb = boto3.client('dynamodb', 
+            endpoint_url=config('DYNAMODB_ENDPOINT_URL', default='http://dynamo-db:8000/'),
+            region_name=config('REGION', default='ap-southeast-1'),
+            aws_access_key_id='x',
+            aws_secret_access_key='x'
+        )
+
+table_name = config('TABLE_NAME', default='ProductTable')
+```
+
+replace this code with: 
+```python
+dynamodb = boto3.client('dynamodb')
+table_name = 'ProductTable'
+```
+
+Final version of  `product_table_client.py`:
+```python
+import boto3
+import json
+import logging
+from collections import defaultdict
+import argparse
+from decouple import config
+import uuid
+from custom_logger import setup_logger
+
+
+logger = setup_logger(__name__)
+
+# For production: 
+
+# create a DynamoDB client using boto3. The boto3 library will automatically
+# use the credentials associated with our ECS task role to communicate with
+# DynamoDB, so no credentials need to be stored/managed at all by our code!
+
+dynamodb = boto3.client('dynamodb')
+table_name = 'ProductTable'
+
+def getJsonData(items):
+    # create a default dictonary
+    product_list = defaultdict(list)
+    
+    # loop through the items given as parameters
+    for item in items:
+    # define product payload object
+        product = {
+            'id': item["id"]["S"],
+            'name': item['name']['S'],
+            'description': item['description']['S'],
+            'image_url': item['image_url']['S'],
+            'price': item['price']['N'],
+        }
+        product_list['products'].append(product)
+
+    return product_list
+    
+def getAllProducts():
+
+    response = dynamodb.scan(
+        TableName=table_name
+    )
+        
+    # loop through the returned dict and convert this into json
+    data_list = getJsonData(response["Items"])
+    
+    return json.dumps(data_list)
+
+# Retrive a single mysfit from DynamoDB using their unique mysfitId
+def getProduct(product_id):
+
+    # get a product by its unique key
+    response = dynamodb.get_item(
+        TableName=table_name,
+        Key={
+            'id': {
+                'S': product_id
+            }
+        }
+    )
+
+
+    # check if the item exists in dynamodb
+    if 'Item' in response:
+        item = response['Item']
+
+        logger.info("Get Product Response: ")
+        logger.info(response)
+        
+        # define product payload object
+        product = {
+            'id': item["id"]["S"],
+            'name': item['name']['S'],
+            'description': item['description']['S'],
+            'image_url': item['image_url']['S'],
+            'price': item['price']['N'],
+        }
+
+    else:
+
+        product = {
+            'status' : "The product with id: {} does not exist.".format(product_id)
+        }
+
+
+    return json.dumps({'products' : product})
+
+def createProduct(product_dict):
+
+    product_id = str(uuid.uuid4())
+    name = str(product_dict['name'])
+    description = str(product_dict['description'])
+    image_url = str(product_dict['image_url'])
+    price = str(product_dict['price'])
+
+
+    response = dynamodb.put_item(
+        TableName=table_name,
+        Item={
+                'id': {
+                    'S': product_id
+                },
+                'name': {
+                    'S' : name
+                },
+                'description' : {
+                    'S' : description
+                },
+                'image_url': {
+                    'S' : image_url
+                },
+                'price': {
+                    'N' : price
+                }             
+            }
+        )
+
+
+    # define product payload object
+
+    product = {
+        'id': product_id,
+        'name': name,
+        'description': description,
+        'image_url': image_url,
+        'price': price,
+        'status' : 'CREATED OK'
+    }
+
+    return json.dumps({'products': product})
+
+def updateProduct(product_id, product_dict):
+
+    # TODO: Fix validation for record updates
+
+    # example used for updating values
+    # https://stackoverflow.com/questions/37721245/boto3-updating-multiple-values
+    product_name = str(product_dict['name'])
+    description = str(product_dict['description'])
+    image_url = str(product_dict['image_url'])
+    price = str(product_dict['price'])
+
+    response = dynamodb.update_item(
+        TableName=table_name,
+        Key={
+            'id': {
+                'S': product_id
+            }
+        },
+        UpdateExpression="""SET product_name = :p_name, 
+                                description = :p_description,
+                                image_url = :p_image_url,
+                                price = :p_price
+                                """,
+        ExpressionAttributeValues={
+            ':p_name': {
+                'S' : product_name
+            },
+            ':p_description' : {
+                'S' : description
+            },
+            ':p_image_url': {
+                'S' : image_url
+            },
+            ':p_price': {
+                'N' : price
+            }              
+        }
+    )
+
+
+    logger.info("Update Product Response: ")
+    logger.info(response)
+
+    # define product payload object
+    product = {
+        'name': product_name,
+        'description': description,
+        'image_url': image_url,
+        'price': price,
+        'status' : 'UPDATED OK'
+    }
+
+
+    return json.dumps({'products':product})
+
+def deleteProduct(product_id):
+
+    response = dynamodb.delete_item(
+        TableName=table_name,
+        Key={
+            'id': {
+                'S': product_id
+            }
+        }
+    )
+
+    product = {
+        'id' : product_id,
+        'status' : 'DELETED OK'
+    }
+
+    return json.dumps({'products':product})
+
+```
 
 ### (Optional) Clean up
 ```
+$ docker-compose down
 $ aws ecr delete-repository --repository-name myproject-product-restapi --force
 $ aws codecommit delete-repository --repository-name myproject-product-restapi
 $ rm -rf ~/environment/myproject-product-restapi
